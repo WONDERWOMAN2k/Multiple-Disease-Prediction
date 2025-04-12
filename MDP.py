@@ -1,232 +1,100 @@
-{
-  "nbformat": 4,
-  "nbformat_minor": 0,
-  "metadata": {
-    "colab": {
-      "provenance": [],
-      "authorship_tag": "ABX9TyPLG2janxri2sc/szK7XQXe",
-      "include_colab_link": true
-    },
-    "kernelspec": {
-      "name": "python3",
-      "display_name": "Python 3"
-    },
-    "language_info": {
-      "name": "python"
-    }
-  },
-  "cells": [
-    {
-      "cell_type": "markdown",
-      "metadata": {
-        "id": "view-in-github",
-        "colab_type": "text"
-      },
-      "source": [
-        "<a href=\"https://colab.research.google.com/github/WONDERWOMAN2k/Multiple-Disease-Prediction/blob/main/MDP.ipynb\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
-      ]
-    },
-    {
-      "cell_type": "code",
-      "source": [
-        "!pip install streamlit\n",
-        "\n",
-        "import streamlit as st\n",
-        "import numpy as np\n",
-        "import pandas as pd\n",
-        "from sklearn.model_selection import train_test_split\n",
-        "from sklearn.preprocessing import LabelEncoder\n",
-        "from sklearn.ensemble import RandomForestClassifier\n",
-        "from sklearn.metrics import accuracy_score, confusion_matrix\n",
-        "import matplotlib.pyplot as plt\n",
-        "import seaborn as sns\n",
-        "\n",
-        "# Set Streamlit page config\n",
-        "st.set_page_config(page_title=\"Multiple Disease Prediction\", layout=\"wide\")\n",
-        "\n",
-        "# Function for Preprocessing and Analysis\n",
-        "def preprocess_and_train(data, target_column, dataset_name):\n",
-        "    st.subheader(f\"📊 Dataset Preview - {dataset_name}\")\n",
-        "    st.write(data.head())\n",
-        "\n",
-        "    # Show column names and missing values\n",
-        "    st.text(f\"Columns in {dataset_name} dataset: {data.columns.tolist()}\")\n",
-        "    st.write(\"Missing Values:\")\n",
-        "    st.write(data.isnull().sum())\n",
-        "\n",
-        "    # Handle missing values\n",
-        "    numeric_columns = data.select_dtypes(include=[np.number]).columns\n",
-        "    data[numeric_columns] = data[numeric_columns].fillna(data[numeric_columns].median())\n",
-        "\n",
-        "    # Handle categorical columns\n",
-        "    non_numeric_columns = data.select_dtypes(exclude=[np.number]).columns\n",
-        "    label_encoder = LabelEncoder()\n",
-        "    for column in non_numeric_columns:\n",
-        "        data[column] = label_encoder.fit_transform(data[column])\n",
-        "\n",
-        "    # Target check\n",
-        "    if target_column not in data.columns:\n",
-        "        st.error(f\"Target column '{target_column}' not found in {dataset_name}.\")\n",
-        "        return None\n",
-        "\n",
-        "    # Features and target\n",
-        "    X = data.drop(columns=[target_column])\n",
-        "    y = data[target_column]\n",
-        "\n",
-        "    # Train-test split\n",
-        "    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n",
-        "\n",
-        "    # Train model\n",
-        "    model = RandomForestClassifier(n_estimators=100, random_state=42)\n",
-        "    model.fit(X_train, y_train)\n",
-        "\n",
-        "    # Predict and evaluate\n",
-        "    y_pred = model.predict(X_test)\n",
-        "    accuracy = accuracy_score(y_test, y_pred)\n",
-        "    conf_matrix = confusion_matrix(y_test, y_pred)\n",
-        "\n",
-        "    st.success(f\"✅ Accuracy for {dataset_name}: {accuracy * 100:.2f}%\")\n",
-        "\n",
-        "    # Confusion matrix\n",
-        "    st.subheader(f\"🔍 Confusion Matrix - {dataset_name}\")\n",
-        "    fig1, ax1 = plt.subplots()\n",
-        "    sns.heatmap(conf_matrix, annot=True, fmt=\"d\", cmap=\"Blues\",\n",
-        "                xticklabels=[\"No Disease\", \"Disease\"],\n",
-        "                yticklabels=[\"No Disease\", \"Disease\"])\n",
-        "    plt.xlabel(\"Predicted\")\n",
-        "    plt.ylabel(\"Actual\")\n",
-        "    st.pyplot(fig1)\n",
-        "\n",
-        "    # Feature importance\n",
-        "    st.subheader(f\"🌟 Feature Importance - {dataset_name}\")\n",
-        "    feature_importances = model.feature_importances_\n",
-        "    features = X.columns\n",
-        "    fig2, ax2 = plt.subplots(figsize=(10, 6))\n",
-        "    sns.barplot(x=feature_importances, y=features)\n",
-        "    plt.xlabel(\"Importance\")\n",
-        "    plt.ylabel(\"Features\")\n",
-        "    st.pyplot(fig2)\n",
-        "\n",
-        "    return model\n",
-        "\n",
-        "\n",
-        "# Streamlit UI\n",
-        "st.title(\"🧠 Multiple Disease Prediction System\")\n",
-        "st.markdown(\"Upload your datasets below for **Parkinson's**, **Liver Disease**, and **Kidney Disease** prediction.\")\n",
-        "\n",
-        "# Upload datasets\n",
-        "parkinsons_file = st.file_uploader(\"📤 Upload Parkinson's Disease CSV\", type=[\"csv\"])\n",
-        "liver_file = st.file_uploader(\"📤 Upload Liver Disease CSV\", type=[\"csv\"])\n",
-        "kidney_file = st.file_uploader(\"📤 Upload Kidney Disease CSV\", type=[\"csv\"])\n",
-        "\n",
-        "if parkinsons_file:\n",
-        "    parkinsons_data = pd.read_csv(parkinsons_file)\n",
-        "    parkinsons_model = preprocess_and_train(parkinsons_data, target_column=\"status\", dataset_name=\"Parkinson's Disease\")\n",
-        "\n",
-        "if liver_file:\n",
-        "    liver_data = pd.read_csv(liver_file)\n",
-        "    liver_model = preprocess_and_train(liver_data, target_column=\"Dataset\", dataset_name=\"Liver Disease\")\n",
-        "\n",
-        "if kidney_file:\n",
-        "    kidney_data = pd.read_csv(kidney_file)\n",
-        "    kidney_model = preprocess_and_train(kidney_data, target_column=\"classification\", dataset_name=\"Kidney Disease\")\n"
-      ],
-      "metadata": {
-        "colab": {
-          "base_uri": "https://localhost:8080/"
-        },
-        "id": "4ETp7StEftGY",
-        "outputId": "873586a1-f6a7-4d5e-ae80-ab498f5b69f2"
-      },
-      "execution_count": 3,
-      "outputs": [
-        {
-          "output_type": "stream",
-          "name": "stdout",
-          "text": [
-            "Collecting streamlit\n",
-            "  Downloading streamlit-1.44.1-py3-none-any.whl.metadata (8.9 kB)\n",
-            "Requirement already satisfied: altair<6,>=4.0 in /usr/local/lib/python3.11/dist-packages (from streamlit) (5.5.0)\n",
-            "Requirement already satisfied: blinker<2,>=1.0.0 in /usr/local/lib/python3.11/dist-packages (from streamlit) (1.9.0)\n",
-            "Requirement already satisfied: cachetools<6,>=4.0 in /usr/local/lib/python3.11/dist-packages (from streamlit) (5.5.2)\n",
-            "Requirement already satisfied: click<9,>=7.0 in /usr/local/lib/python3.11/dist-packages (from streamlit) (8.1.8)\n",
-            "Requirement already satisfied: numpy<3,>=1.23 in /usr/local/lib/python3.11/dist-packages (from streamlit) (2.0.2)\n",
-            "Requirement already satisfied: packaging<25,>=20 in /usr/local/lib/python3.11/dist-packages (from streamlit) (24.2)\n",
-            "Requirement already satisfied: pandas<3,>=1.4.0 in /usr/local/lib/python3.11/dist-packages (from streamlit) (2.2.2)\n",
-            "Requirement already satisfied: pillow<12,>=7.1.0 in /usr/local/lib/python3.11/dist-packages (from streamlit) (11.1.0)\n",
-            "Requirement already satisfied: protobuf<6,>=3.20 in /usr/local/lib/python3.11/dist-packages (from streamlit) (5.29.4)\n",
-            "Requirement already satisfied: pyarrow>=7.0 in /usr/local/lib/python3.11/dist-packages (from streamlit) (18.1.0)\n",
-            "Requirement already satisfied: requests<3,>=2.27 in /usr/local/lib/python3.11/dist-packages (from streamlit) (2.32.3)\n",
-            "Requirement already satisfied: tenacity<10,>=8.1.0 in /usr/local/lib/python3.11/dist-packages (from streamlit) (9.1.2)\n",
-            "Requirement already satisfied: toml<2,>=0.10.1 in /usr/local/lib/python3.11/dist-packages (from streamlit) (0.10.2)\n",
-            "Requirement already satisfied: typing-extensions<5,>=4.4.0 in /usr/local/lib/python3.11/dist-packages (from streamlit) (4.13.1)\n",
-            "Collecting watchdog<7,>=2.1.5 (from streamlit)\n",
-            "  Downloading watchdog-6.0.0-py3-none-manylinux2014_x86_64.whl.metadata (44 kB)\n",
-            "\u001b[2K     \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m44.3/44.3 kB\u001b[0m \u001b[31m3.3 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
-            "\u001b[?25hRequirement already satisfied: gitpython!=3.1.19,<4,>=3.0.7 in /usr/local/lib/python3.11/dist-packages (from streamlit) (3.1.44)\n",
-            "Collecting pydeck<1,>=0.8.0b4 (from streamlit)\n",
-            "  Downloading pydeck-0.9.1-py2.py3-none-any.whl.metadata (4.1 kB)\n",
-            "Requirement already satisfied: tornado<7,>=6.0.3 in /usr/local/lib/python3.11/dist-packages (from streamlit) (6.4.2)\n",
-            "Requirement already satisfied: jinja2 in /usr/local/lib/python3.11/dist-packages (from altair<6,>=4.0->streamlit) (3.1.6)\n",
-            "Requirement already satisfied: jsonschema>=3.0 in /usr/local/lib/python3.11/dist-packages (from altair<6,>=4.0->streamlit) (4.23.0)\n",
-            "Requirement already satisfied: narwhals>=1.14.2 in /usr/local/lib/python3.11/dist-packages (from altair<6,>=4.0->streamlit) (1.33.0)\n",
-            "Requirement already satisfied: gitdb<5,>=4.0.1 in /usr/local/lib/python3.11/dist-packages (from gitpython!=3.1.19,<4,>=3.0.7->streamlit) (4.0.12)\n",
-            "Requirement already satisfied: python-dateutil>=2.8.2 in /usr/local/lib/python3.11/dist-packages (from pandas<3,>=1.4.0->streamlit) (2.8.2)\n",
-            "Requirement already satisfied: pytz>=2020.1 in /usr/local/lib/python3.11/dist-packages (from pandas<3,>=1.4.0->streamlit) (2025.2)\n",
-            "Requirement already satisfied: tzdata>=2022.7 in /usr/local/lib/python3.11/dist-packages (from pandas<3,>=1.4.0->streamlit) (2025.2)\n",
-            "Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/lib/python3.11/dist-packages (from requests<3,>=2.27->streamlit) (3.4.1)\n",
-            "Requirement already satisfied: idna<4,>=2.5 in /usr/local/lib/python3.11/dist-packages (from requests<3,>=2.27->streamlit) (3.10)\n",
-            "Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/local/lib/python3.11/dist-packages (from requests<3,>=2.27->streamlit) (2.3.0)\n",
-            "Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.11/dist-packages (from requests<3,>=2.27->streamlit) (2025.1.31)\n",
-            "Requirement already satisfied: smmap<6,>=3.0.1 in /usr/local/lib/python3.11/dist-packages (from gitdb<5,>=4.0.1->gitpython!=3.1.19,<4,>=3.0.7->streamlit) (5.0.2)\n",
-            "Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.11/dist-packages (from jinja2->altair<6,>=4.0->streamlit) (3.0.2)\n",
-            "Requirement already satisfied: attrs>=22.2.0 in /usr/local/lib/python3.11/dist-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit) (25.3.0)\n",
-            "Requirement already satisfied: jsonschema-specifications>=2023.03.6 in /usr/local/lib/python3.11/dist-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit) (2024.10.1)\n",
-            "Requirement already satisfied: referencing>=0.28.4 in /usr/local/lib/python3.11/dist-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit) (0.36.2)\n",
-            "Requirement already satisfied: rpds-py>=0.7.1 in /usr/local/lib/python3.11/dist-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit) (0.24.0)\n",
-            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.11/dist-packages (from python-dateutil>=2.8.2->pandas<3,>=1.4.0->streamlit) (1.17.0)\n",
-            "Downloading streamlit-1.44.1-py3-none-any.whl (9.8 MB)\n",
-            "\u001b[2K   \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m9.8/9.8 MB\u001b[0m \u001b[31m87.4 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
-            "\u001b[?25hDownloading pydeck-0.9.1-py2.py3-none-any.whl (6.9 MB)\n",
-            "\u001b[2K   \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m6.9/6.9 MB\u001b[0m \u001b[31m91.0 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
-            "\u001b[?25hDownloading watchdog-6.0.0-py3-none-manylinux2014_x86_64.whl (79 kB)\n",
-            "\u001b[2K   \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m79.1/79.1 kB\u001b[0m \u001b[31m5.9 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
-            "\u001b[?25hInstalling collected packages: watchdog, pydeck, streamlit\n",
-            "Successfully installed pydeck-0.9.1 streamlit-1.44.1 watchdog-6.0.0\n"
-          ]
-        },
-        {
-          "output_type": "stream",
-          "name": "stderr",
-          "text": [
-            "2025-04-12 13:38:52.603 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.605 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.700 \n",
-            "  \u001b[33m\u001b[1mWarning:\u001b[0m to view this Streamlit app on a browser, run it with the following\n",
-            "  command:\n",
-            "\n",
-            "    streamlit run /usr/local/lib/python3.11/dist-packages/colab_kernel_launcher.py [ARGUMENTS]\n",
-            "2025-04-12 13:38:52.701 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.703 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.705 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.707 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.708 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.710 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.711 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.712 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.713 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.713 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.714 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.715 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.716 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.718 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.719 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.720 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.720 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n",
-            "2025-04-12 13:38:52.721 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.\n"
-          ]
-        }
-      ]
-    }
-  ]
-}
+
+import streamlit as st
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Set Streamlit page config
+st.set_page_config(page_title="Multiple Disease Prediction", layout="wide")
+
+# Function for Preprocessing and Analysis
+def preprocess_and_train(data, target_column, dataset_name):
+    st.subheader(f"📊 Dataset Preview - {dataset_name}")
+    st.write(data.head())
+
+    # Show column names and missing values
+    st.text(f"Columns in {dataset_name} dataset: {data.columns.tolist()}")
+    st.write("Missing Values:")
+    st.write(data.isnull().sum())
+
+    # Handle missing values
+    numeric_columns = data.select_dtypes(include=[np.number]).columns
+    data[numeric_columns] = data[numeric_columns].fillna(data[numeric_columns].median())
+
+    # Handle categorical columns
+    non_numeric_columns = data.select_dtypes(exclude=[np.number]).columns
+    label_encoder = LabelEncoder()
+    for column in non_numeric_columns:
+        data[column] = label_encoder.fit_transform(data[column])
+
+    # Target check
+    if target_column not in data.columns:
+        st.error(f"Target column '{target_column}' not found in {dataset_name}.")
+        return None
+
+    # Features and target
+    X = data.drop(columns=[target_column])
+    y = data[target_column]
+
+    # Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Train model
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+
+    # Predict and evaluate
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    conf_matrix = confusion_matrix(y_test, y_pred)
+
+    st.success(f"✅ Accuracy for {dataset_name}: {accuracy * 100:.2f}%")
+
+    # Confusion matrix
+    st.subheader(f"🔍 Confusion Matrix - {dataset_name}")
+    fig1, ax1 = plt.subplots()
+    sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues",
+                xticklabels=["No Disease", "Disease"],
+                yticklabels=["No Disease", "Disease"])
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    st.pyplot(fig1)
+
+    # Feature importance
+    st.subheader(f"🌟 Feature Importance - {dataset_name}")
+    feature_importances = model.feature_importances_
+    features = X.columns
+    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    sns.barplot(x=feature_importances, y=features)
+    plt.xlabel("Importance")
+    plt.ylabel("Features")
+    st.pyplot(fig2)
+
+    return model
+
+
+# Streamlit UI
+st.title("🧠 Multiple Disease Prediction System")
+st.markdown("Upload your datasets below for **Parkinson's**, **Liver Disease**, and **Kidney Disease** prediction.")
+
+# Upload datasets
+parkinsons_file = st.file_uploader("📤 Upload Parkinson's Disease CSV", type=["csv"])
+liver_file = st.file_uploader("📤 Upload Liver Disease CSV", type=["csv"])
+kidney_file = st.file_uploader("📤 Upload Kidney Disease CSV", type=["csv"])
+
+if parkinsons_file:
+    parkinsons_data = pd.read_csv(parkinsons_file)
+    parkinsons_model = preprocess_and_train(parkinsons_data, target_column="status", dataset_name="Parkinson's Disease")
+
+if liver_file:
+    liver_data = pd.read_csv(liver_file)
+    liver_model = preprocess_and_train(liver_data, target_column="Dataset", dataset_name="Liver Disease")
+
+if kidney_file:
+    kidney_data = pd.read_csv(kidney_file)
+    kidney_model = preprocess_and_train(kidney_data, target_column="classification", dataset_name="Kidney Disease")
