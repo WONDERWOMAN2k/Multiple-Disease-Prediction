@@ -31,5 +31,4 @@ This project is a Streamlit-based web application that predicts the likelihood o
    ```bash
    git clone https://github.com/WONDERWOMAN2k/Multiple-Disease-Prediction.git
    cd Multiple-Disease-Prediction
-pip install -r requirements.txt
-streamlit run app.py
+
