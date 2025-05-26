@@ -1,21 +1,68 @@
 import streamlit as st
 import pickle
 import numpy as np
+import os
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
-# Load models
+# Train Kidney Disease model (run only if pkl not found)
+def train_kidney_model():
+    df = pd.read_csv('kidney_disease.csv')
+    X = df[['sg', 'al', 'sc', 'hemo', 'pcv', 'htn']].copy()
+    X['htn'] = X['htn'].map({'yes':1, 'no':0})
+    y = df['classification']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X_train, y_train)
+    with open('kidney_model.pkl', 'wb') as f:
+        pickle.dump(model, f)
+
+# Train Liver Disease model
+def train_liver_model():
+    df = pd.read_csv('liver_disease.csv')
+    X = df[['age', 'total_bilirubin', 'alk_phosphate', 'sgpt', 'sgpt_altt', 'total_protein']]
+    y = df['classification']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X_train, y_train)
+    with open('liver_model.pkl', 'wb') as f:
+        pickle.dump(model, f)
+
+# Train Parkinson's Disease model
+def train_parkinson_model():
+    df = pd.read_csv('parkinsons.csv')
+    X = df.drop(columns=['name', 'status'])
+    y = df['status']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X_train, y_train)
+    with open('parkinson_model.pkl', 'wb') as f:
+        pickle.dump(model, f)
+
+# Train models if pickle files missing
+if not os.path.exists('kidney_model.pkl'):
+    train_kidney_model()
+
+if not os.path.exists('liver_model.pkl'):
+    train_liver_model()
+
+if not os.path.exists('parkinson_model.pkl'):
+    train_parkinson_model()
+
+# Load models safely
 try:
     kidney_model = pickle.load(open('kidney_model.pkl', 'rb'))
     liver_model = pickle.load(open('liver_model.pkl', 'rb'))
     parkinson_model = pickle.load(open('parkinson_model.pkl', 'rb'))
 except FileNotFoundError:
-    st.error("One or more model files are missing. Please upload them to your GitHub repo.")
+    st.error("One or more model files are missing. Please upload them.")
     st.stop()
 
-# App configuration
+# Streamlit App UI
 st.set_page_config(page_title="Multiple Disease Prediction", layout="centered")
 st.title("🧠 Multiple Disease Prediction using ML")
 
-# Sidebar
 selected_disease = st.sidebar.selectbox("Select Disease", 
     ["Kidney Disease", "Liver Disease", "Parkinson's Disease"])
 
