@@ -11,15 +11,15 @@ except FileNotFoundError:
     st.error("One or more model files are missing. Please upload them to your GitHub repo.")
     st.stop()
 
-# App title
+# App configuration
 st.set_page_config(page_title="Multiple Disease Prediction", layout="centered")
 st.title("🧠 Multiple Disease Prediction using ML")
 
-# Sidebar for disease selection
+# Sidebar
 selected_disease = st.sidebar.selectbox("Select Disease", 
     ["Kidney Disease", "Liver Disease", "Parkinson's Disease"])
 
-# Kidney Disease Input
+# Kidney Disease Form
 if selected_disease == "Kidney Disease":
     st.header("🔍 Kidney Disease Prediction")
 
@@ -29,18 +29,17 @@ if selected_disease == "Kidney Disease":
     with col2:
         al = st.number_input("Albumin (0-5)", min_value=0, max_value=5)
     with col3:
-        sc = st.number_input("Serum Creatinine (e.g. 1.2)", min_value=0.0, max_value=15.0, step=0.1)
+        sc = st.number_input("Serum Creatinine", min_value=0.0, max_value=15.0, step=0.1)
 
     with col1:
-        hemo = st.number_input("Hemoglobin (e.g. 12.0)", min_value=3.0, max_value=17.0, step=0.1)
+        hemo = st.number_input("Hemoglobin", min_value=3.0, max_value=17.0, step=0.1)
     with col2:
         pcv = st.number_input("Packed Cell Volume", min_value=20, max_value=60)
     with col3:
         htn = st.selectbox("Hypertension", ["yes", "no"])
 
-    # Convert inputs to model format
     input_data = np.array([sg, al, sc, hemo, pcv, 1 if htn == "yes" else 0]).reshape(1, -1)
-    
+
     if st.button("Predict Kidney Disease"):
         result = kidney_model.predict(input_data)
         if result[0] == 1:
@@ -48,7 +47,7 @@ if selected_disease == "Kidney Disease":
         else:
             st.success("No signs of Kidney Disease ✅")
 
-# Liver Disease Input
+# Liver Disease Form
 elif selected_disease == "Liver Disease":
     st.header("🩺 Liver Disease Prediction")
 
@@ -76,7 +75,7 @@ elif selected_disease == "Liver Disease":
         else:
             st.success("Liver Function Normal ✅")
 
-# Parkinson's Disease Input
+# Parkinson's Disease Form
 elif selected_disease == "Parkinson's Disease":
     st.header("🧠 Parkinson's Disease Prediction")
 
