@@ -78,4 +78,23 @@ elif selected_disease == "Liver Disease":
 
 # Parkinson's Disease Input
 elif selected_disease == "Parkinson's Disease":
-    st.header("🧠 Parkinson's Disease Predict
+    st.header("🧠 Parkinson's Disease Prediction")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        fo = st.number_input("MDVP:Fo(Hz)", min_value=50.0, max_value=300.0)
+        jitter = st.number_input("MDVP:Jitter(%)", min_value=0.0, max_value=1.0)
+        shimmer = st.number_input("MDVP:Shimmer", min_value=0.0, max_value=1.0)
+    with col2:
+        rap = st.number_input("MDVP:RAP", min_value=0.0, max_value=0.1)
+        ppq = st.number_input("MDVP:PPQ", min_value=0.0, max_value=0.1)
+        dda = st.number_input("MDVP:DDP", min_value=0.0, max_value=0.1)
+
+    input_data = np.array([fo, jitter, shimmer, rap, ppq, dda]).reshape(1, -1)
+
+    if st.button("Predict Parkinson's Disease"):
+        result = parkinson_model.predict(input_data)
+        if result[0] == 1:
+            st.error("Parkinson's Detected 🚨")
+        else:
+            st.success("No Parkinson's Symptoms ✅")
